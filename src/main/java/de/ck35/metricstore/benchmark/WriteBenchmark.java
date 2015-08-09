@@ -1,9 +1,14 @@
 package de.ck35.metricstore.benchmark;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +18,9 @@ import com.google.common.base.Supplier;
 
 import de.ck35.metriccache.api.MetricCacheRepository;
 
-public class Benchmark implements Runnable {
+public class WriteBenchmark implements Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Benchmark.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WriteBenchmark.class);
     
 	private final MetricCacheRepository repository;
 	private final Iterable<Entry<BucketInfo, ObjectNode>> dataIterable;
@@ -25,38 +30,48 @@ public class Benchmark implements Runnable {
     private final int timeout;
     private final TimeUnit unit;
 
-    
-	public Benchmark(MetricCacheRepository repository, 
+    private final boolean skip;
+
+	public WriteBenchmark(MetricCacheRepository repository, 
 	                 Iterable<Entry<BucketInfo, ObjectNode>> testDataIterator,
 	                 Supplier<ExecutorService> executorServiceSupplier,
 	                 int threadCount,
 	                 int timeout,
-	                 TimeUnit unit) {
+	                 TimeUnit unit, 
+	                 boolean skip) {
         this.repository = repository;
         this.dataIterable = testDataIterator;
         this.executorServiceSupplier = executorServiceSupplier;
         this.threadCount = threadCount;
         this.timeout = timeout;
         this.unit = unit;
+        this.skip = skip;
     }
 
     @Override
 	public void run() {
-	    LOG.info("Starting benchmark.");
+        if(skip) {
+            LOG.info("Skipping write benchmark.");
+            return;
+        }
+	    LOG.info("Starting write benchmark.");
 	    DataSupplier dataSupplier = new DataSupplier(dataIterable.iterator());
 	    ExecutorService threadPool = executorServiceSupplier.get();
 	    try {
+	        List<Future<?>> futures = new ArrayList<Future<?>>(threadCount);
 	        for(int thread = 0 ; thread < threadCount ; thread++) {
-	            threadPool.submit(new MetricRepositoryWriter(repository, dataSupplier));
+	            futures.add(threadPool.submit(new MetricRepositoryWriter(repository, dataSupplier)));
 	        }
-	        threadPool.shutdown();
-	        threadPool.awaitTermination(timeout, unit);
-	    } catch (InterruptedException e) {
-	        throw new RuntimeException("Benchmark interrupted!");
+	        for(Future<?> future : futures) {
+	            future.get(timeout, unit);
+	        }
+	        threadPool.shutdownNow();
+	    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+	        throw new RuntimeException("Benchmark failed!", e);
         } finally {
 	        threadPool.shutdownNow();
 	    }
-	    LOG.info("Benchmark done.");
+	    LOG.info("Writebenchmark done.");
 	}
     
     public static class DataSupplier implements Supplier<Entry<BucketInfo, ObjectNode>> {

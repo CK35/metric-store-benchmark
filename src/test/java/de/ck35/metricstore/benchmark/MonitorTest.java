@@ -47,14 +47,16 @@ public class MonitorTest {
     @SuppressWarnings("unchecked")
     public void testRun() throws InterruptedException {
         Supplier<Optional<Long>> totalProcessedCommandsSupplier = mock(Supplier.class);
+        Supplier<Optional<Long>> totalReadsSupplier = mock(Supplier.class);
         Supplier<Optional<Double>> cpuUsageSupplier = mock(Supplier.class);
         Supplier<Optional<Double>> heapUsageSupplier = mock(Supplier.class);
 
         when(totalProcessedCommandsSupplier.get()).thenReturn(Optional.of(1l));
+        when(totalReadsSupplier.get()).thenReturn(Optional.of(1l));
         when(cpuUsageSupplier.get()).thenReturn(Optional.of(2d));
         when(heapUsageSupplier.get()).thenReturn(Optional.of(3d));
         
-        Monitor monitor = new Monitor(totalProcessedCommandsSupplier, cpuUsageSupplier, heapUsageSupplier, 1, TimeUnit.MILLISECONDS);
+        Monitor monitor = new Monitor(totalProcessedCommandsSupplier, totalReadsSupplier, cpuUsageSupplier, heapUsageSupplier, 1, TimeUnit.MILLISECONDS);
         final UncaughtExceptionHandler handler = Thread.currentThread().getUncaughtExceptionHandler();
         ExecutorService executorService = Executors.newFixedThreadPool(1, new ThreadFactory() {
             @Override
@@ -67,6 +69,7 @@ public class MonitorTest {
         executorService.submit(monitor);
         
         verify(totalProcessedCommandsSupplier, timeout(10000).atLeast(5)).get();
+        verify(totalReadsSupplier, timeout(10000).atLeast(5)).get();
         verify(cpuUsageSupplier, timeout(10000).atLeast(5)).get();
         verify(heapUsageSupplier, timeout(10000).atLeast(5)).get();
         

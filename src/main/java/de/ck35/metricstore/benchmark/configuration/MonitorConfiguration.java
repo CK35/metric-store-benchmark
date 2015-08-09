@@ -24,10 +24,11 @@ public class MonitorConfiguration {
     
     @Bean
     public Monitor monitor() throws MalformedObjectNameException {
-        return new Monitor(new MBeanAttributeSupplier<>(mbeanServer, ObjectName.getInstance("de.ck35.metricstore.fs:type=BucketCommandProcessor,name=bucketCommandProcessor"), "TotalProcessedCommands", Long.class),
+        return new Monitor(new MBeanAttributeSupplier<>(mbeanServer, ObjectName.getInstance("de.ck35.metricstore.fs:type=BucketCommandProcessor,name=bucketCommandProcessor"), "TotalProcessedWriteCommands", Long.class),
+                           new MBeanAttributeSupplier<>(mbeanServer, ObjectName.getInstance("de.ck35.metriccache.core:type=BucketMetricCacheRepository,name=bucketMetricCacheRepository"), "TotalReadCalls", Long.class),
                            new MBeanAttributeSupplier<>(mbeanServer, ObjectName.getInstance("java.lang:type=OperatingSystem"), "ProcessCpuLoad", Double.class),
                            new HeapMemoryUsageSupplier(new MBeanAttributeSupplier<>(mbeanServer, ObjectName.getInstance("java.lang:type=Memory"), "HeapMemoryUsage", CompositeData.class)),
-                           env.getProperty("metricstore.benchmark.monitor.pollTimeout", Integer.class, 10), 
+                           env.getProperty("metricstore.benchmark.monitor.pollTimeout", Integer.class, 1), 
                            env.getProperty("metricstore.benchmark.monitor.pollTimeout.unit", TimeUnit.class, TimeUnit.SECONDS));
     }
     

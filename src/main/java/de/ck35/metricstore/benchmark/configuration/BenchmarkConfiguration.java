@@ -8,14 +8,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
-import org.joda.time.LocalDate;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
@@ -24,17 +21,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Suppliers;
 
 import de.ck35.metriccache.api.MetricCacheRepository;
-import de.ck35.metricstore.benchmark.Benchmark;
 import de.ck35.metricstore.benchmark.BucketInfo;
 import de.ck35.metricstore.benchmark.DataGenerator;
 import de.ck35.metricstore.benchmark.DataIterable;
 import de.ck35.metricstore.benchmark.Monitor;
+import de.ck35.metricstore.benchmark.ReadBenchmark;
 import de.ck35.metricstore.benchmark.ReadVerification;
 import de.ck35.metricstore.benchmark.Reporter;
 import de.ck35.metricstore.benchmark.Reporter.FileWriterSupplier;
+import de.ck35.metricstore.benchmark.WriteBenchmark;
 
 @Configuration
-@ComponentScan(basePackages={"de.ck35.metricstore.fs.configuration", "de.ck35.metriccache.core.configuration"})
 public class BenchmarkConfiguration {
 
 	@Autowired MetricCacheRepository repository;
@@ -43,14 +40,22 @@ public class BenchmarkConfiguration {
 	@Autowired Monitor monitor;
 	
 	@Bean
-	public Benchmark benchmark() {
+	public WriteBenchmark writeBenchmark() {
 	    int threadCount = env.getProperty("metricstore.benchmark.threadcount", Integer.class, 10);
-		return new Benchmark(repository, 
-		                     dataIterable(),
-		                     Suppliers.ofInstance(Executors.newFixedThreadPool(threadCount)),
-		                     threadCount,
-		                     env.getProperty("metricstore.benchmark.timeout", Integer.class, 60),
-		                     env.getProperty("metricstore.benchmark.timeout.unit", TimeUnit.class, TimeUnit.MINUTES));
+		return new WriteBenchmark(repository, 
+		                          dataIterable(),
+		                          Suppliers.ofInstance(Executors.newFixedThreadPool(threadCount)),
+		                          threadCount,
+		                          env.getProperty("metricstore.benchmark.timeout", Integer.class, 60),
+		                          env.getProperty("metricstore.benchmark.timeout.unit", TimeUnit.class, TimeUnit.MINUTES),
+		                          env.getProperty("metricstore.benchmark.write.skip", Boolean.class, false));
+	}
+	
+	@Bean
+	public ReadBenchmark readBenchmark() {
+	    return new ReadBenchmark(dataInterval(), 
+	                             repository,
+	                             env.getProperty("metricstore.benchmark.read.skip", Boolean.class, false));
 	}
 
 	@Bean
@@ -76,8 +81,7 @@ public class BenchmarkConfiguration {
 	@Bean
 	public Interval dataInterval() {
 	    Period testPeriod = Period.parse(env.getProperty("metricstore.benchmark.period", "PT1h"));
-        DateTime end = LocalDate.now().toDateTimeAtStartOfDay(DateTimeZone.UTC);
-        return new Interval(end.minus(testPeriod), end);
+        return new Interval(testPeriod, DateTime.now());
 	}
 	
 	@Bean

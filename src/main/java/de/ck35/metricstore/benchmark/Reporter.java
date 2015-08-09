@@ -91,7 +91,7 @@ public class Reporter implements Callable<Void> {
                 writeOptional(entry.getValue().getHeapUsage(), writer);
             }
         },
-        ProcessedCommandsTotal() {
+        ProcessedWriteCommandsTotal() {
             @Override
             public void writeValue(Entry<DateTime, SystemState> entry,
                                    BufferedWriter writer,
@@ -99,12 +99,28 @@ public class Reporter implements Callable<Void> {
                 writeOptional(entry.getValue().getTotalProcessedCommands(), writer);
             }
         },
-        ProcessedCommandsPerSecond() {
+        ProcessedWriteCommandsPerSecond() {
             @Override
             public void writeValue(Entry<DateTime, SystemState> entry,
                                    BufferedWriter writer,
                                    DateTimeFormatter dateTimeFormatter) throws IOException {
                 writeOptional(entry.getValue().getProcessedCommandsPerSecond(), writer);
+            }
+        },
+        TotalReads() {
+            @Override
+            public void writeValue(Entry<DateTime, SystemState> entry,
+                                   BufferedWriter writer,
+                                   DateTimeFormatter dateTimeFormatter) throws IOException {
+                writeOptional(entry.getValue().getTotalReadCalls(), writer);
+            }
+        },
+        TotalReadsPerSecond() {
+            @Override
+            public void writeValue(Entry<DateTime, SystemState> entry,
+                                   BufferedWriter writer,
+                                   DateTimeFormatter dateTimeFormatter) throws IOException {
+                writeOptional(entry.getValue().getTotalReadCallsPerSecond(), writer);
             }
         };
         

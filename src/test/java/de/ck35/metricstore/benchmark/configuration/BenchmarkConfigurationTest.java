@@ -13,7 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.google.common.io.Files;
 
 import de.ck35.metricstore.api.MetricRepository;
-import de.ck35.metricstore.benchmark.Benchmark;
+import de.ck35.metricstore.benchmark.WriteBenchmark;
 import de.ck35.metricstore.benchmark.Monitor;
 import de.ck35.metricstore.benchmark.ReadVerification;
 import de.ck35.metricstore.benchmark.Reporter;
@@ -24,7 +24,7 @@ import de.ck35.metricstore.benchmark.Reporter;
 public class BenchmarkConfigurationTest {
 
     @Autowired Monitor monitor;
-    @Autowired Benchmark benchmark;
+    @Autowired WriteBenchmark benchmark;
     @Autowired ReadVerification readVerification;
     @Autowired Reporter reporter;
     @Autowired MetricRepository metricRepository;

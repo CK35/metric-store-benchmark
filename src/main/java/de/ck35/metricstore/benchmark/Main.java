@@ -34,11 +34,14 @@ public class Main {
 		        executor.submit(monitor);
 		        monitor.awaitRun();
 		        
-	            Benchmark benchmark = context.getBean(Benchmark.class);
+	            WriteBenchmark benchmark = context.getBean(WriteBenchmark.class);
 	            executor.submit(benchmark).get();
 	            
-	            ReadVerification readVerification = context.getBean("readVerification", ReadVerification.class);
+	            ReadVerification readVerification = context.getBean(ReadVerification.class);
 	            executor.submit(readVerification).get();
+	            
+	            ReadBenchmark readBenchmark = context.getBean(ReadBenchmark.class);
+	            executor.submit(readBenchmark).get();
 	            
 	            Reporter reporter = context.getBean(Reporter.class);
 	            executor.submit(reporter).get();

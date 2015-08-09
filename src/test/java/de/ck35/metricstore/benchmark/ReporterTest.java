@@ -31,6 +31,8 @@ public class ReporterTest {
         result.put(new DateTime(2015, 1, 1, 0, 0, DateTimeZone.UTC), new SystemState(Optional.of(1d), 
                                                                                      Optional.of(2d), 
                                                                                      Optional.of(3l), 
+                                                                                     Optional.<Double>absent(),
+                                                                                     Optional.of(4l), 
                                                                                      Optional.<Double>absent()));
         Monitor monitor = mock(Monitor.class);
         try(StringWriter stringWriter = new StringWriter();
@@ -41,8 +43,8 @@ public class ReporterTest {
             
             List<String> lines = Splitter.on(System.lineSeparator()).splitToList(stringWriter.getBuffer());
             assertEquals(5, lines.size());
-            assertEquals("Timestamp;CPUUsage;HeapUsage;ProcessedCommandsTotal;ProcessedCommandsPerSecond;", lines.get(0));
-            assertEquals("00:00;1;2;3;-;", lines.get(1));
+            assertEquals("Timestamp;CPUUsage;HeapUsage;ProcessedWriteCommandsTotal;ProcessedWriteCommandsPerSecond;TotalReads;TotalReadsPerSecond;", lines.get(0));
+            assertEquals("00:00;1;2;3;-;4;-;", lines.get(1));
             assertTrue(lines.get(2).isEmpty());
             assertTrue(lines.get(3).isEmpty());
         }

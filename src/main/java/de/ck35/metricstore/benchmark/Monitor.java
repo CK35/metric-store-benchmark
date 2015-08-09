@@ -22,6 +22,7 @@ public class Monitor implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(Monitor.class);
     
 	private final Supplier<Optional<Long>> totalProcessedCommandsSupplier;
+	private final Supplier<Optional<Long>> totalReadsSupplier;
 	private final Supplier<Optional<Double>> cpuUsageSupplier;
 	private final Supplier<Optional<Double>> heapUsageSupplier;
 	
@@ -32,13 +33,16 @@ public class Monitor implements Runnable {
 
     private final int pollTimeout;
     private final TimeUnit unit;
+
 	
     public Monitor(Supplier<Optional<Long>> totalProcessedCommandsSupplier,
+                   Supplier<Optional<Long>> totalReadsSupplier,
                    Supplier<Optional<Double>> cpuUsageSupplier,
                    Supplier<Optional<Double>> heapUsageSupplier,
                    int pollTimeout, 
                    TimeUnit unit) {
         this.totalProcessedCommandsSupplier = totalProcessedCommandsSupplier;
+        this.totalReadsSupplier = totalReadsSupplier;
 		this.cpuUsageSupplier = cpuUsageSupplier;
 		this.heapUsageSupplier = heapUsageSupplier;
         this.pollTimeout = pollTimeout;
@@ -88,21 +92,31 @@ public class Monitor implements Runnable {
     protected SystemState systemState(DateTime now, Optional<Entry<DateTime, SystemState>> lastState) {
     	Optional<Entry<Long, SystemState>> last = optionalDurationMillis(now, lastState);
     	Optional<Long> totalProcessedCommands = totalProcessedCommandsSupplier.get();
+    	Optional<Long> totalReadCalls = totalReadsSupplier.get();
     	Optional<Double> processedCommandsPerSecond;
+    	Optional<Double> readCallsPerSecond;
     	if(last.isPresent()) {
-    		long commands = totalProcessedCommands.or(0l) - last.get().getValue().getTotalProcessedCommands().or(0l);
-    		if(commands < 0) {
-    			processedCommandsPerSecond = Optional.absent();
-    		} else {    			
-    			processedCommandsPerSecond = Optional.of((commands/(double)last.get().getKey())*1000.0);
-    		}
+    	    processedCommandsPerSecond = elementsPerSecond(totalProcessedCommands, last.get().getValue().getTotalProcessedCommands(), last.get().getKey());
+    	    readCallsPerSecond = elementsPerSecond(totalReadCalls, last.get().getValue().getTotalReadCalls(), last.get().getKey());
     	} else {
     		processedCommandsPerSecond = Optional.absent();
+    		readCallsPerSecond = Optional.absent();
     	}
         return new SystemState(cpuUsageSupplier.get(), 
                                heapUsageSupplier.get(),
                                totalProcessedCommands, 
-                               processedCommandsPerSecond);
+                               processedCommandsPerSecond,
+                               totalReadCalls,
+                               readCallsPerSecond);
+    }
+    
+    public static Optional<Double> elementsPerSecond(Optional<Long> totalElements, Optional<Long> lastTotalElements, long durationMillis) {
+        long elements = totalElements.or(0l) - lastTotalElements.or(0l);
+        if(elements < 0) {
+            return Optional.absent();
+        } else {
+            return Optional.of((elements/(double) durationMillis)*1000.0);
+        }
     }
     
     public static Optional<Entry<Long, SystemState>> optionalDurationMillis(DateTime now, Optional<Entry<DateTime, SystemState>> lastState) {
@@ -123,15 +137,21 @@ public class Monitor implements Runnable {
 	    private final Optional<Double> heapUsage;
 	    private final Optional<Long> totalProcessedCommands;
 	    private final Optional<Double> processedCommandsPerSecond;
+	    private final Optional<Long> totalReadCalls;
+	    private final Optional<Double> totalReadCallsPerSecond;
 	    
 		public SystemState(Optional<Double> cpuUsage, 
 		                   Optional<Double> heapUsage, 
 		                   Optional<Long> totalProcessedCommands, 
-		                   Optional<Double> processedCommandsPerSecond) {
+		                   Optional<Double> processedCommandsPerSecond,
+		                   Optional<Long> totalReadCalls,
+		                   Optional<Double> totalReadCallsPerSecond) {
 			this.cpuUsage = cpuUsage;
 			this.heapUsage = heapUsage;
 			this.totalProcessedCommands = totalProcessedCommands;
 			this.processedCommandsPerSecond = processedCommandsPerSecond;
+            this.totalReadCalls = totalReadCalls;
+            this.totalReadCallsPerSecond = totalReadCallsPerSecond;
 		}
 
 		public Optional<Double> getCpuUsage() {
@@ -146,5 +166,11 @@ public class Monitor implements Runnable {
 		public Optional<Double> getProcessedCommandsPerSecond() {
 			return processedCommandsPerSecond;
 		}
+		public Optional<Long> getTotalReadCalls() {
+            return totalReadCalls;
+        }
+		public Optional<Double> getTotalReadCallsPerSecond() {
+            return totalReadCallsPerSecond;
+        }
 	}
 }
