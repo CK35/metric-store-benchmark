@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import com.google.common.base.Supplier;
 
 import de.ck35.metriccache.api.MetricCacheRepository;
 import de.ck35.metriccache.api.MetricCacheRequest;
+import de.ck35.metricstore.api.MetricRepository;
 import de.ck35.metricstore.api.StoredMetric;
 import de.ck35.metricstore.api.StoredMetricCallable;
 
@@ -22,16 +24,19 @@ public class ReadVerification implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReadVerification.class);
     
-    private final MetricCacheRepository repository;
+    private final MetricRepository metricRepository;
+    private final MetricCacheRepository cacheRepository;
     private final Supplier<List<Entry<BucketInfo, List<Entry<DateTime, ObjectNode>>>>> dataSupplier;
     private final Interval interval;
     private final boolean skip;
     
-    public ReadVerification(MetricCacheRepository repository, 
+    public ReadVerification(MetricRepository metricRepository,
+                            MetricCacheRepository cacheRepository,
                             Interval interval,
                             Supplier<List<Entry<BucketInfo, List<Entry<DateTime, ObjectNode>>>>> dataSupplier,
                             boolean skip) {
-        this.repository = repository;
+        this.metricRepository = metricRepository;
+        this.cacheRepository = cacheRepository;
         this.interval = interval;
         this.dataSupplier = dataSupplier;
         this.skip = skip;
@@ -50,10 +55,16 @@ public class ReadVerification implements Runnable {
             return;
         }
         for(Entry<BucketInfo, List<Entry<DateTime, ObjectNode>>> entry : data) {
-            MetricCacheRequest request = repository.request();
-            VerificationCallable callable = new VerificationCallable(entry.getKey().getBucketName(), entry.getKey().getBucketType(), entry.getValue().iterator());
+            String bucketName = entry.getKey().getBucketName();
+            String bucketType = entry.getKey().getBucketType();
+            LOG.info("Verifying metric repository with Bucket: '{}'.", bucketName);
+            metricRepository.read(bucketName, interval, new VerificationCallable(bucketName, bucketType, entry.getValue().iterator()));
+            
+            LOG.info("Verifying metric cache with Bucket: '{}'.", bucketName);
+            MetricCacheRequest request = cacheRepository.request();
+            VerificationCallable callable = new VerificationCallable(bucketName, bucketType, entry.getValue().iterator());
             request.builder(callable).build();
-            request.read(entry.getKey().getBucketName(), interval);
+            request.read(bucketName, interval);
         }
         LOG.info("Read verification done.");
     }
@@ -101,7 +112,7 @@ public class ReadVerification implements Runnable {
             if(!bucketType.equals(node.getMetricBucket().getType())) {
                 throw new IllegalArgumentException("Wrong bucket type! Expected: '" + bucketType + "' but read: '" + node.getMetricBucket().getType() + "'!");
             }
-            if(!currentTimestamp.equals(node.getTimestamp())) {
+            if(!currentTimestamp.withZone(DateTimeZone.UTC).withSecondOfMinute(0).withMillisOfSecond(0).equals(node.getTimestamp().withZone(DateTimeZone.UTC))) {
                 throw new IllegalArgumentException(toIllegalArgumentMessage(node));
             }
             if(!currentNodes.remove(node.getObjectNode())) {

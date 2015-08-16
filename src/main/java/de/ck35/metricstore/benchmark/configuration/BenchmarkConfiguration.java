@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Suppliers;
 
 import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metricstore.api.MetricRepository;
 import de.ck35.metricstore.benchmark.BucketInfo;
 import de.ck35.metricstore.benchmark.DataGenerator;
 import de.ck35.metricstore.benchmark.DataIterable;
@@ -34,7 +35,8 @@ import de.ck35.metricstore.benchmark.WriteBenchmark;
 @Configuration
 public class BenchmarkConfiguration {
 
-	@Autowired MetricCacheRepository repository;
+    @Autowired MetricRepository metricRepository;
+	@Autowired MetricCacheRepository cacheRepository;
 	@Autowired ObjectMapper mapper;
 	@Autowired Environment env;
 	@Autowired Monitor monitor;
@@ -42,7 +44,7 @@ public class BenchmarkConfiguration {
 	@Bean
 	public WriteBenchmark writeBenchmark() {
 	    int threadCount = env.getProperty("metricstore.benchmark.threadcount", Integer.class, 10);
-		return new WriteBenchmark(repository, 
+		return new WriteBenchmark(cacheRepository, 
 		                          dataIterable(),
 		                          Suppliers.ofInstance(Executors.newFixedThreadPool(threadCount)),
 		                          threadCount,
@@ -54,7 +56,7 @@ public class BenchmarkConfiguration {
 	@Bean
 	public ReadBenchmark readBenchmark() {
 	    return new ReadBenchmark(dataInterval(), 
-	                             repository,
+	                             cacheRepository,
 	                             env.getProperty("metricstore.benchmark.read.skip", Boolean.class, false));
 	}
 
@@ -97,7 +99,10 @@ public class BenchmarkConfiguration {
 	
 	@Bean
 	public ReadVerification readVerification() {
-	    return new ReadVerification(repository, dataInterval(), dataGenerator(),
+	    return new ReadVerification(metricRepository,
+	                                cacheRepository, 
+	                                dataInterval(), 
+	                                dataGenerator(),
 	                                env.getProperty("metricstore.benchmark.readverification.skip", Boolean.class, false));
 	}
 }
