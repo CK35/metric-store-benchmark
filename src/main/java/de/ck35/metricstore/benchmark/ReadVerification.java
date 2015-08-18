@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Supplier;
 
-import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metriccache.api.MetricCache;
 import de.ck35.metriccache.api.MetricCacheRequest;
 import de.ck35.metricstore.api.MetricRepository;
 import de.ck35.metricstore.api.StoredMetric;
@@ -25,13 +25,13 @@ public class ReadVerification implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ReadVerification.class);
     
     private final MetricRepository metricRepository;
-    private final MetricCacheRepository cacheRepository;
+    private final MetricCache cacheRepository;
     private final Supplier<List<Entry<BucketInfo, List<Entry<DateTime, ObjectNode>>>>> dataSupplier;
     private final Interval interval;
     private final boolean skip;
     
     public ReadVerification(MetricRepository metricRepository,
-                            MetricCacheRepository cacheRepository,
+                            MetricCache cacheRepository,
                             Interval interval,
                             Supplier<List<Entry<BucketInfo, List<Entry<DateTime, ObjectNode>>>>> dataSupplier,
                             boolean skip) {

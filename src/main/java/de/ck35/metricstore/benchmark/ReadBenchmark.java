@@ -6,7 +6,7 @@ import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metriccache.api.MetricCache;
 import de.ck35.metriccache.api.MetricCacheRequest;
 import de.ck35.metricstore.api.MetricBucket;
 import de.ck35.metricstore.api.StoredMetric;
@@ -17,11 +17,11 @@ public class ReadBenchmark implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ReadBenchmark.class);
     
     private final Interval interval;
-    private final MetricCacheRepository cacheRepository;
+    private final MetricCache cacheRepository;
 
     private final boolean skip;
     
-    public ReadBenchmark(Interval interval, MetricCacheRepository cacheRepository, boolean skip) {
+    public ReadBenchmark(Interval interval, MetricCache cacheRepository, boolean skip) {
         this.interval = interval;
         this.cacheRepository = cacheRepository;
         this.skip = skip;

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Suppliers;
 
-import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metriccache.api.MetricCache;
 import de.ck35.metricstore.api.MetricRepository;
 import de.ck35.metricstore.benchmark.BucketInfo;
 import de.ck35.metricstore.benchmark.DataGenerator;
@@ -36,7 +36,7 @@ import de.ck35.metricstore.benchmark.WriteBenchmark;
 public class BenchmarkConfiguration {
 
     @Autowired MetricRepository metricRepository;
-	@Autowired MetricCacheRepository cacheRepository;
+	@Autowired MetricCache cacheRepository;
 	@Autowired ObjectMapper mapper;
 	@Autowired Environment env;
 	@Autowired Monitor monitor;

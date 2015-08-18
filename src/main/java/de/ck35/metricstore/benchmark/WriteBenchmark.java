@@ -16,13 +16,13 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Supplier;
 
-import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metriccache.api.MetricCache;
 
 public class WriteBenchmark implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(WriteBenchmark.class);
     
-	private final MetricCacheRepository repository;
+	private final MetricCache repository;
 	private final Iterable<Entry<BucketInfo, ObjectNode>> dataIterable;
 
 	private final Supplier<ExecutorService> executorServiceSupplier;
@@ -32,7 +32,7 @@ public class WriteBenchmark implements Runnable {
 
     private final boolean skip;
 
-	public WriteBenchmark(MetricCacheRepository repository, 
+	public WriteBenchmark(MetricCache repository, 
 	                 Iterable<Entry<BucketInfo, ObjectNode>> testDataIterator,
 	                 Supplier<ExecutorService> executorServiceSupplier,
 	                 int threadCount,
@@ -93,17 +93,17 @@ public class WriteBenchmark implements Runnable {
 
     public static class MetricRepositoryWriter implements Runnable {
         
-        private final MetricCacheRepository repository;
+        private final MetricCache repository;
         private final Supplier<Entry<BucketInfo, ObjectNode>> dataSupplier;
 
-        public MetricRepositoryWriter(MetricCacheRepository repository, Supplier<Entry<BucketInfo, ObjectNode>> dataSupplier) {
+        public MetricRepositoryWriter(MetricCache repository, Supplier<Entry<BucketInfo, ObjectNode>> dataSupplier) {
             this.repository = repository;
             this.dataSupplier = dataSupplier;
         }
         @Override
         public void run() {
             for(Entry<BucketInfo, ObjectNode> next = dataSupplier.get() ; next != null ; next = dataSupplier.get()) {
-                repository.wirte(next.getKey().getBucketName(), next.getKey().getBucketType(), next.getValue());
+                repository.write(next.getKey().getBucketName(), next.getKey().getBucketType(), next.getValue());
             }
         }
     }

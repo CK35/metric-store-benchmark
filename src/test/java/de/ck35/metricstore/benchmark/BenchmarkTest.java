@@ -24,7 +24,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
-import de.ck35.metriccache.api.MetricCacheRepository;
+import de.ck35.metriccache.api.MetricCache;
 import de.ck35.metriccache.api.MetricCacheRequest;
 import de.ck35.metriccache.api.MetricCacheRequest.FieldFilterBuilder;
 import de.ck35.metricstore.api.MetricBucket;
@@ -35,7 +35,7 @@ public class BenchmarkTest {
 
     private List<Entry<BucketInfo, ObjectNode>> testData;
     
-    @Mock MetricCacheRepository repository;
+    @Mock MetricCache repository;
     @Mock MetricCacheRequest request;
     @Mock FieldFilterBuilder fieldFilterBuilder;
     @Mock ObjectNode node;
@@ -73,7 +73,7 @@ public class BenchmarkTest {
     public void test() {
         WriteBenchmark benchmark = benchmark();
         benchmark.run();
-        verify(repository).wirte("a", "a-type", node);
+        verify(repository).write("a", "a-type", node);
     }
     
     @Test(expected=RuntimeException.class)
